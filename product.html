@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"
+    integrity="sha512-xIPqqrfvUAc/Cspuj7Bq0UtHNo/5qkdyngx6Vwt+tmbvTLDszzXM0G6c91LXmGrRx8KEPulT+AfOOez+TeVylg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    #products {
+      color: #20b883;
+      border-bottom: 3px solid #20b883;
+    }
+  </style>
+  <title>Web App</title>
+</head>
+
+<body>
+  <div class="Topbar_Topbar">
+    <div class="Topbar_LogoWrapper">
+      <img src="./logo.58169365.png" alt="logo" />
+      <p class="Topbar_BrandName">Kafene</p>
+    </div>
+    <nav>
+      <a href="orders.html">Orders</a>
+      <a href="product.html" id="products">Products</a>
+      <a href="users.html">Users</a>
+    </nav>
+    <p id="logout" onclick="logOut()">Logout</p>
+  </div>
+
+  <div class="maincontainer">
+    <h1>Products</h1>
+    <div class="Homepageorders">
+      <div id="filters">
+        <p id="filtxt"><b> Filters </b></p>
+        <p id="total">Count: 0</p>
+        <div>
+          <p>
+            <label class="checkbox"><input type="checkbox" name="expired" id="expired" checked />Expired</label>
+          </p>
+          <p>
+            <label class="checkbox"><input type="checkbox" name="lowstock" id="lowstock" checked />Low Stock</label>
+          </p>
+        </div>
+      </div>
+
+      <table class="Homepage_OrderTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product Name</th>
+            <th>Product Brand</th>
+            <th>Expiry Date</th>
+            <th>Unit Price</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+        <tbody id="mytabledata"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Check login status and redirect if necessary
+    let status = window.localStorage.getItem("loginStatus");
+    if (status !== "true") {
+      window.location.href = "index.html";
+    }
+
+    function logOut() {
+      window.localStorage.setItem("loginStatus", "false");
+      window.location.href = "index.html";
+    }
+
+    // Format date to YYYY-MM-DD
+    function formatDate(date) {
+      const d = new Date(date);
+      const month = ('0' + (d.getMonth() + 1)).slice(-2);
+      const day = ('0' + d.getDate()).slice(-2);
+      const year = d.getFullYear();
+      return `${year}-${month}-${day}`;
+    }
+
+    // Fetch and display products
+    function getProducts() {
+      axios.get("https://5fc1a1c9cb4d020016fe6b07.mockapi.io/api/v1/products")
+        .then(response => {
+          const products = response.data;
+          renderProducts(products);
+        })
+        .catch(error => console.error('Error fetching products:', error));
+    }
+
+    // Render filtered products
+    function renderProducts(products) {
+      const expired = document.getElementById("expired").checked;
+      const lowstock = document.getElementById("lowstock").checked;
+      const today = formatDate(new Date());
+
+      const filteredProducts = products.filter(product => {
+        const isExpired = formatDate(product.expiryDate) < today;
+        const isLowStock = product.stock < 100;
+        if (expired && lowstock) return isExpired && isLowStock;
+        if (expired) return isExpired;
+        if (lowstock) return isLowStock;
+        return true;
+      });
+
+      const tableBody = document.getElementById("mytabledata");
+      tableBody.innerHTML = filteredProducts.map(product => `
+        <tr>
+          <td>${product.id}</td>
+          <td>${product.medicineName}</td>
+          <td>${product.medicineBrand}</td>
+          <td>${product.expiryDate}</td>
+          <td>${product.unitPrice}</td>
+          <td>${product.stock}</td>
+        </tr>`).join('');
+
+      document.getElementById("total").textContent = `Count: ${filteredProducts.length}`;
+    }
+
+    // Add event listeners for checkboxes
+    document.getElementById("expired").addEventListener("change", getProducts);
+    document.getElementById("lowstock").addEventListener("change", getProducts);
+
+    // Initial fetch and render
+    getProducts();
+  </script>
+</body>
+
+</html>
